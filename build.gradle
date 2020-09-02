@@ -1,0 +1,75 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
+plugins {
+    id 'org.springframework.boot' version '2.3.3.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'java'
+    id 'jacoco'
+}
+
+group = 'com.alm2020'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    compile group: 'org.hibernate.validator', name: 'hibernate-validator', version: '6.1.5.Final'
+    compile 'org.mockito:mockito-core:3.5.5'
+    
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+    reports.html.enabled(true)
+    finalizedBy(jacocoTestReport)
+}
+
+jacocoTestReport() {
+    dependsOn(test)
+    reports {
+        html.destination file("${buildDir}/jacocoHtmlReport")
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+    reportsDir = file("$buildDir/jacocoReports")
+}
+
+task("stage"){
+    dependsOn(clean)
+    dependsOn(build)
+    dependsOn(jacocoTestReport)
+}
+
+tasks.withType(Test){
+    testLogging {
+        testLogging.events.add(TestLogEvent.PASSED)
+        testLogging.events.add(TestLogEvent.FAILED)
+        testLogging.events.add(TestLogEvent.SKIPPED)
+        testLogging.exceptionFormat(TestExceptionFormat.FULL)
+        testLogging.showStackTraces(true)
+        testLogging.showCauses(true)
+        testLogging.showExceptions(true)
+    }
+}
+
+
+
+compileJava
+compileTestJava
+jacocoTestReport
